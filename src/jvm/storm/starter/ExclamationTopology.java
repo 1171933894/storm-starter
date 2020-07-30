@@ -43,10 +43,13 @@ public class ExclamationTopology {
     }
     
     public static void main(String[] args) throws Exception {
+        // 构建拓扑的类，用于指定执行的拓扑。拓扑底层是Thrift结构
         TopologyBuilder builder = new TopologyBuilder();
-        
-        builder.setSpout("word", new TestWordSpout(), 10);        
-        builder.setBolt("exclaim1", new ExclamationBolt(), 3)
+
+        // setSpout或setBolt中parallelismHint表示每个组件产生多少个执行器
+        builder.setSpout("word", new TestWordSpout(), 10);
+        // setNumTasks是热舞的初始数量，如果不显示配置，storm默认每个执行器执行一个任务
+        builder.setBolt("exclaim1", new ExclamationBolt(), 3)/*.setNumTasks(4)*/
                 .shuffleGrouping("word");
         builder.setBolt("exclaim2", new ExclamationBolt(), 2)
                 .shuffleGrouping("exclaim1");
@@ -55,7 +58,8 @@ public class ExclamationTopology {
         conf.setDebug(true);
         
         if(args!=null && args.length > 0) {
-            conf.setNumWorkers(3);
+            // 描述：集群中不同节点的拓扑可以创建多少个工作进程；配置选项：TOPOLOGY_WORKERS
+            conf.setNumWorkers(3);// 使用3个工作进程
             
             StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
         } else {
